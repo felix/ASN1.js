@@ -157,4 +157,26 @@ describe('asn1.js DER decoder', function() {
      var decoded = M.decode(new Buffer('0101ff', 'hex'));
      assert.deepEqual(decoded, { 'type': 'apple', 'value': true });
   });
+
+  it('should decode components of simple indefinite length octet string', function() {
+    var A = asn1.define('A', function() {
+      this.implicit(0).octstr()
+    })
+    var out = A.decode(new Buffer('A0800401050401060401070000', 'hex'), 'der');
+    assert.deepEqual(out, new Buffer('050607', 'hex'))
+  });
+
+  it('should decode components of longer indefinite length structure', function() {
+    var A = asn1.define('A', function() {
+      this.key('seq').seq().obj(
+        this.key('int1').int(),
+        this.key('oct').implicit(0).octstr(),
+        this.key('int2').int()
+      )
+    })
+    var out = A.decode(new Buffer('3080020104A08004010504010604010700000201050000', 'hex'), 'der');
+    assert.equal(out.int1.toString(), '4')
+    assert.deepEqual(out.oct, new Buffer('050607', 'hex'))
+    assert.equal(out.int2.toString(), '5')
+  });
 });
